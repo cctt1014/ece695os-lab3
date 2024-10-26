@@ -12,7 +12,7 @@
 #include "queue.h"
 
 // num_pages = size_of_memory / size_of_one_page
-static uint32 freemap[/*size*/];
+static uint32 freemap[MEM_FREEMAP_LENGTH/*size*/];
 static uint32 pagestart;
 static int nfreepages;
 static int freemapmax;
@@ -56,6 +56,21 @@ int MemoryGetSize() {
 //
 //----------------------------------------------------------------------
 void MemoryModuleInit() {
+  int i, j;
+  int curr_addr;
+
+  for (i = 0; i < MEM_FREEMAP_LENGTH; i++) {
+    freemap[i] = 0;
+    for (j = 0; j < 32; j++) {
+      curr_addr = (i << 17) + (j << 12);
+      if (curr_addr <= lastosaddress) {
+        freemap[i] = freemap[i] | (1 << j);
+      } else {
+        // printf("[DBG] End of freemap init. i=%d, j=%d, lastosaddress=%x\n", i, j, lastosaddress);
+        return;
+      }
+    }
+  }
 }
 
 
@@ -68,6 +83,20 @@ void MemoryModuleInit() {
 //
 //----------------------------------------------------------------------
 uint32 MemoryTranslateUserToSystem (PCB *pcb, uint32 addr) {
+  uint32 vpage_num, ppage_num;
+  uint32 offset;
+
+  // if (addr > MEM_MAX_VIRTUAL_ADDRESS) {
+  //   printf("[FATAL] (%d): user accessed out-of-boundary address %x\n", findpid(pcb), addr);
+  //   ProcessKill();
+  //   return 0;
+  // }
+
+  vpage_num = addr / MEM_PAGESIZE;
+  ppage_num = pcb->pagetable[vpage_num] / MEM_PAGESIZE;
+  offset    = addr % MEM_PAGESIZE;
+
+  return (ppage_num*MEM_PAGESIZE + offset);
 }
 
 
@@ -168,22 +197,32 @@ int MemoryCopyUserToSystem (PCB *pcb, unsigned char *from,unsigned char *to, int
 // Feel free to edit.
 //---------------------------------------------------------------------
 int MemoryPageFaultHandler(PCB *pcb) {
+  uint32 vpagenum, ppagenum, stackpagenum;
+  uint32 fault_address;
 
-  /* uint32 addr = pcb->currentSavedFrame[PROCESS_STACK_FAULT]; */
+  dbprintf('m', "Starting page fault handler\n");
 
-  /* // segfault if the faulting address is not part of the stack */
-  /* if (vpagenum < stackpagenum) { */
-  /*   dbprintf('m', "addr = %x\nsp = %x\n", addr, pcb->currentSavedFrame[PROCESS_STACK_USER_STACKPOINTER]); */
-  /*   printf("FATAL ERROR (%d): segmentation fault at page address %x\n", findpid(pcb), addr); */
-  /*   ProcessKill(); */
-  /*   return MEM_FAIL; */
-  /* } */
+  // stack pointer will be adjusted first when malloc new memory space
+  // -8 is applied due to previous frame pointer and the return address 
+  // (4 bytes each) which are copied to the stack immediately after
+  // entering the function but before modifying the stack pointer
+  stackpagenum = (pcb->currentSavedFrame[PROCESS_STACK_USER_STACKPOINTER]-8) >> MEM_L1FIELD_FIRST_BITNUM;
 
-  /* ppagenum = MemoryAllocPage(); */
-  /* pcb->pagetable[vpagenum] = MemorySetupPte(ppagenum); */
-  /* dbprintf('m', "Returning from page fault handler\n"); */
-  /* return MEM_SUCCESS; */
-  return MEM_FAIL;
+  fault_address = pcb->currentSavedFrame[PROCESS_STACK_FAULT];
+  vpagenum = fault_address >> MEM_L1FIELD_FIRST_BITNUM;
+
+  // segfault if the faulting address is not part of the stack
+  if (vpagenum < stackpagenum) {
+    dbprintf('m', "fault_address = %x\nsp = %x\n", fault_address, pcb->currentSavedFrame[PROCESS_STACK_USER_STACKPOINTER]);
+    printf("[FATAL] (%d): segmentation fault at page address %x\n", findpid(pcb), fault_address);
+    ProcessKill();
+    return MEM_FAIL;
+  }
+
+  ppagenum = MemoryAllocPage();
+  pcb->pagetable[vpagenum] = MemorySetupPte(ppagenum);
+  dbprintf('m', "Returning from page fault handler\n");
+  return MEM_SUCCESS;
 }
 
 
@@ -192,16 +231,44 @@ int MemoryPageFaultHandler(PCB *pcb) {
 // Feel free to edit/remove them
 //---------------------------------------------------------------------
 
-int MemoryAllocPage(void) {
+// Find and return the first available ppage frame number
+uint32 MemoryAllocPage(void) {
+  int i, j;
+
+  for (i = 0; i < MEM_FREEMAP_LENGTH; i++) {
+    // printf("[DBG] freemap[%d]=%x\n",i, freemap[i]);
+    for (j = 0; j < 32; j++) {
+      if ((freemap[i] & (uint32)(1 << j)) == 0) {
+        freemap[i] |= (1 << j);
+        // printf("[DBG] Page allocation return ppage num = %d with i=%d, j=%d", (i << 5) + (j), i,j);
+        return (i << 5) + (j);
+      }
+    }
+  }
+
+  printf("[ERROR %d] No more free physical page in free map.\n", GetCurrentPid());
   return -1;
 }
 
 
+// Maps input virtual page index to an initial physical page 
+// with control bits masked accrodingly
 uint32 MemorySetupPte (uint32 page) {
-  return -1;
+  return 0 & MEM_PTE_MASK;
 }
 
+// Allocate ppage and set status bits for pte
+uint32 MemorySetPte(uint32 ppagenum) {
+  return (ppagenum * MEM_PAGESIZE) | MEM_PTE_VALID;
+}
 
+// Free up physical pages based on ppage number
 void MemoryFreePage(uint32 page) {
+  int i, j;
+
+  i = page / 32;
+  j = page % 32;
+
+  freemap[i] &= ~(1 << j);
 }
 

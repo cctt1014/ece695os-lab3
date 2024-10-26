@@ -1,1 +1,9 @@
+.vscode
+bin
+
 sim.log
+
+.mainframer
+mainframer.sh
+
+.gitignore

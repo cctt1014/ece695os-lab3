@@ -1,13 +1,16 @@
-# # Input arguments for q2/q3/q4
-# NUM_PC_PAIR=3
-# # Input arguments for q5
-# NUM_N=10
-# NUM_O=10
-# T=120
+# Input arguments for one-level
+TEST_IDX=0
 
-# .PHONY: default q2 q3 q4 q5 run
 
-# default: build_os
+.PHONY: one
+
+one:
+	cd one-level; make
+
+run_one:
+	cd one-level; make run TEST_IDX=${TEST_IDX}
+
+# example: build_os
 # 	cd apps/example; make
 
 # q2: build_os
@@ -25,7 +28,8 @@
 # build_os:
 # 	cd os; make
 
-# clean:
+clean:
+	cd one-level; make clean
 # 	cd os; make clean
 # 	cd apps/example; make clean
 # 	cd apps/q2; make clean
