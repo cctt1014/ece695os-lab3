@@ -58,6 +58,14 @@ void main (int argc, char *argv[])
     Printf("makeprocs (%d): Creating process which will access beyond max virtual address\n", getpid());
     process_create(BEYOND_MAX, s_procs_completed_str, NULL);
     break;
+  case 2:
+    Printf("makeprocs (%d): Creating process which will access beyond allocated pages\n", getpid());
+    process_create(BEYOND_ALLOCATED, s_procs_completed_str, NULL);
+    break;
+  case 3:
+    Printf("makeprocs (%d): Creating process which will grow user stack to more than 1 page\n", getpid());
+    process_create(GROW_STACK, s_procs_completed_str, NULL);
+    break;
 
   default:
     Printf("[ERROR] Test index is out-of-boundary\n", argv[0]);

@@ -524,7 +524,9 @@ dointerrupt (unsigned int cause, unsigned int iar, unsigned int isr,
     case TRAP_ADDRESS:
       printf ("Exiting after illegal address at iar=0x%x, isr=0x%x\n",
 	      iar, isr);
-      exitsim ();
+      // Not to exit simulator but kill the faulty process
+      // exitsim ();
+      ProcessKill(currentPCB);
       break;
     case TRAP_ILLEGALINST:
       printf ("Exiting after illegal instruction at iar=0x%x, isr=0x%x\n",

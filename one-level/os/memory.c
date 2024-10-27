@@ -86,12 +86,6 @@ uint32 MemoryTranslateUserToSystem (PCB *pcb, uint32 addr) {
   uint32 vpage_num, ppage_num;
   uint32 offset;
 
-  // if (addr > MEM_MAX_VIRTUAL_ADDRESS) {
-  //   printf("[FATAL] (%d): user accessed out-of-boundary address %x\n", findpid(pcb), addr);
-  //   ProcessKill();
-  //   return 0;
-  // }
-
   vpage_num = addr / MEM_PAGESIZE;
   ppage_num = pcb->pagetable[vpage_num] / MEM_PAGESIZE;
   offset    = addr % MEM_PAGESIZE;
@@ -220,8 +214,8 @@ int MemoryPageFaultHandler(PCB *pcb) {
   }
 
   ppagenum = MemoryAllocPage();
-  pcb->pagetable[vpagenum] = MemorySetupPte(ppagenum);
-  dbprintf('m', "Returning from page fault handler\n");
+  pcb->pagetable[vpagenum] = MemorySetPte(ppagenum);
+  dbprintf('m', "Returning from page fault handler. vpage=%d is mapped to ppage=%d\n", vpagenum, ppagenum);
   return MEM_SUCCESS;
 }
 
@@ -247,6 +241,7 @@ uint32 MemoryAllocPage(void) {
   }
 
   printf("[ERROR %d] No more free physical page in free map.\n", GetCurrentPid());
+  ProcessKill(currentPCB);
   return -1;
 }
 
