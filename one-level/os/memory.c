@@ -261,7 +261,7 @@ uint32 MemorySetPte(uint32 ppagenum) {
 void MemoryFreePage(uint32 page) {
   int i, j;
 
-  i = page / 32;
+  i = page >> 5;
   j = page % 32;
 
   freemap[i] &= ~(1 << j);

@@ -36,7 +36,7 @@ typedef	void (*VoidFunc)();
 typedef struct PCB {
   uint32	*currentSavedFrame; // -> current saved frame.  MUST BE 1ST!
   uint32	*sysStackPtr;	// Current system stack pointer.  MUST BE 2ND!
-  uint32	sysStackArea;	// System stack area for this process, ppage num
+  uint32	sysStackArea;	// System stack area for this process, physical address
   unsigned int	flags;
   char		name[80];	// Process name
   uint32	pagetable[MEM_L1TABLE_SIZE/* Put the size of the L1 page table here */]; // Statically allocated page table

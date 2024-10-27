@@ -143,14 +143,14 @@ void ProcessFreeResources (PCB *pcb) {
   //------------------------------------------------------------
   // Free all valid PTE
   for (i = 0; i < MEM_L1TABLE_SIZE; i++) {
-    if ( (pcb->pagetable[i] & (MEM_PTE_VALID)) ) {
-      MemoryFreePage(pcb->pagetable[i] >> 3);
-      pcb->pagetable[i] &= ~(MEM_PTE_VALID);
+    if ( (pcb->pagetable[i] & (uint32)(MEM_PTE_VALID)) != 0 ) {
+      MemoryFreePage((pcb->pagetable[i] & MEM_PTE_MASK)/MEM_PAGESIZE);
+      pcb->pagetable[i] = 0;
     }
   }
 
   // Free system stack
-  MemoryFreePage(pcb->sysStackArea / MEM_PAGESIZE);
+  MemoryFreePage(pcb->sysStackArea/MEM_PAGESIZE);
 
   ProcessSetStatus (pcb, PROCESS_STATUS_FREE);
 }

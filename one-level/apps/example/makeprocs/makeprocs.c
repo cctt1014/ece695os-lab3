@@ -5,7 +5,6 @@
 #define BEYOND_MAX "beyond_max.dlx.obj"
 #define BEYOND_ALLOCATED "beyond_allocated.dlx.obj"
 #define GROW_STACK "grow_stack.dlx.obj"
-#define HELLO_100 "hello_100.dlx.obj"
 #define PROCESS_SPAWN "process_spawn.dlx.obj"
 
 void main (int argc, char *argv[])
@@ -15,6 +14,7 @@ void main (int argc, char *argv[])
   sem_t s_procs_completed;             // Semaphore used to wait until all spawned processes have completed
   char s_procs_completed_str[10];      // Used as command-line argument to pass page_mapped handle to new processes
   char process_str[50];
+  int num_parallel_procs = 1;
 
   // Printf("[DBG] Start makeprocs!\n");
 
@@ -37,7 +37,9 @@ void main (int argc, char *argv[])
 
   // Create semaphore to not exit this process until all other processes 
   // have signalled that they are complete.
-  if ((s_procs_completed = sem_create(0)) == SYNC_FAIL) {
+  if (testcase_idx == 5)
+    num_parallel_procs = 30;
+  if ((s_procs_completed = sem_create(-(num_parallel_procs-1))) == SYNC_FAIL) {
     Printf("makeprocs (%d): Bad sem_create\n", getpid());
     Exit();
   }
@@ -66,6 +68,24 @@ void main (int argc, char *argv[])
     Printf("makeprocs (%d): Creating process which will grow user stack to more than 1 page\n", getpid());
     process_create(GROW_STACK, s_procs_completed_str, NULL);
     break;
+  case 4:
+    Printf("makeprocs (%d): Creating process which will create 100 hello world processes sequentially\n", getpid());
+    for (i = 0; i < 100; i++) {
+      Printf("makeprocs (%d): Creating hello world #%d\n", getpid(), i);
+      process_create(HELLO_WORLD, s_procs_completed_str, NULL);
+      if (i == 99) {
+        break;
+      } else if (sem_wait(s_procs_completed) != SYNC_SUCCESS) {
+        Printf("Bad semaphore s_procs_completed (%d) in %s\n", s_procs_completed, argv[0]);
+        Exit();
+      }
+    }
+    break;
+  case 5:
+    Printf("makeprocs (%d): Creating process which will spawn 30 processes to run in parallel\n", getpid());
+    for (i = 0; i < num_parallel_procs; i++)
+      process_create(PROCESS_SPAWN, s_procs_completed_str, NULL);
+  break;
 
   default:
     Printf("[ERROR] Test index is out-of-boundary\n", argv[0]);
