@@ -1,0 +1,2 @@
+work/grow_stack.o: grow_stack.c ../../../include/usertraps.h \
+ ../../../include/misc.h
