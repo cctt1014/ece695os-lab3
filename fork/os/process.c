@@ -633,6 +633,13 @@ int ProcessFork (VoidFunc func, uint32 param, char *name, int isUser) {
   // from the base of the PCB array).
   return (pcb - pcbs);
 }
+
+int ProcessRealFork(VoidFunc func, uint32 param, char *name) {
+
+}
+
+
+
 
 //----------------------------------------------------------------------
 //

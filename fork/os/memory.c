@@ -13,6 +13,7 @@
 
 // num_pages = size_of_memory / size_of_one_page
 static uint32 freemap[MEM_FREEMAP_LENGTH/*size*/];
+static int ref_counter[MEM_NUM_PHYS_PAGE];
 static uint32 pagestart;
 static int nfreepages;
 static int freemapmax;
@@ -74,6 +75,10 @@ void MemoryModuleInit() {
         return;
       }
     }
+  }
+
+  for (i = 0; i < MEM_NUM_PHYS_PAGE; i++) {
+    ref_counter[i] = 0;
   }
 
   for (i = 0; i < 256; i++) {
