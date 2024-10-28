@@ -33,6 +33,7 @@
 #define	TRAP_DIV0		0x5	// Divide by 0
 #define	TRAP_PRIVILEGE		0x6	// Instruction must be executed as sys
 #define	TRAP_FORMAT		0x7	// Instruction is malformed
+#define TRAP_ROP_ACCESS 0x8 // Attempted to access readonly page
 #define	TRAP_PAGEFAULT		0x20
 #define	TRAP_TLBFAULT		0x30
 #define	TRAP_TIMER		0x40	// timer interrupt
@@ -62,6 +63,7 @@
 #define	TRAP_PROCESS_FORK	0x430
 #define TRAP_PROCESS_GETPID	0x431
 #define TRAP_PROCESS_CREATE	0x432
+#define TRAP_PROCESS_PRINT_VLD_PTE 0x433
 #define TRAP_SHARE_CREATE_PAGE	0x440
 #define TRAP_SHARE_MAP_PAGE	0x441
 #define TRAP_SEM_CREATE		0x450

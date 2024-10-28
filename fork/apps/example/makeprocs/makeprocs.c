@@ -6,6 +6,7 @@
 #define BEYOND_ALLOCATED "beyond_allocated.dlx.obj"
 #define GROW_STACK "grow_stack.dlx.obj"
 #define PROCESS_SPAWN "process_spawn.dlx.obj"
+#define FORK_TEST "fork_test.dlx.obj"
 
 void main (int argc, char *argv[])
 {
@@ -26,6 +27,7 @@ void main (int argc, char *argv[])
     Printf("               3: Grow user stack to more than 1 page\n");
     Printf("               4: Create 100 processes sequentially to print Hello World\n");
     Printf("               5: Spawn 30 processes to run in parallel\n");
+    Printf("               6: Fork test for part 5\n");
     Exit();
   }
 
@@ -39,6 +41,8 @@ void main (int argc, char *argv[])
   // have signalled that they are complete.
   if (testcase_idx == 5)
     num_parallel_procs = 30;
+  else if (testcase_idx == 6)
+    num_parallel_procs = 2;
   if ((s_procs_completed = sem_create(-(num_parallel_procs-1))) == SYNC_FAIL) {
     Printf("makeprocs (%d): Bad sem_create\n", getpid());
     Exit();
@@ -86,6 +90,10 @@ void main (int argc, char *argv[])
     for (i = 0; i < num_parallel_procs; i++)
       process_create(PROCESS_SPAWN, s_procs_completed_str, NULL);
     break;
+  case 6:
+    Printf("makeprocs (%d): Creating process which will create fork test\n", getpid());
+    process_create(FORK_TEST, s_procs_completed_str, NULL);
+    break;
 
   default:
     Printf("[ERROR] Test index is out-of-boundary\n", argv[0]);
@@ -95,6 +103,7 @@ void main (int argc, char *argv[])
     Printf("               3: Grow user stack to more than 1 page\n");
     Printf("               4: Create 100 processes sequentially to print Hello World\n");
     Printf("               5: Spawn 30 processes to run in parallel\n");
+    Printf("               6: Fork test for part 5\n");
     Printf("-------------------------------------------------------------------------------------\n");
     Exit();
   }

@@ -360,6 +360,11 @@ dointerrupt (unsigned int cause, unsigned int iar, unsigned int isr,
       break;
     case TRAP_PROCESS_FORK:
       dbprintf ('t', "Got a fork trap!\n");
+      ProcessSetResult(currentPCB, ProcessRealFork(currentPCB));
+      break;
+    case TRAP_PROCESS_PRINT_VLD_PTE:
+      dbprintf ('t', "Got a print process valid PTE trap!\n");
+      ProcessPrintValidPTE(currentPCB);
       break;
     case TRAP_PROCESS_SLEEP:
       dbprintf ('t', "Got a process sleep trap!\n");
@@ -531,6 +536,10 @@ dointerrupt (unsigned int cause, unsigned int iar, unsigned int isr,
       break;
     case TRAP_PAGEFAULT:
       MemoryPageFaultHandler(currentPCB);
+      break;
+    case TRAP_ROP_ACCESS:
+      printf ("Accessing memory page being marked as READONLY");
+      MemoryROPAccessHandler(currentPCB);
       break;
     default:
       printf ("Got an unrecognized system interrupt (0x%x) - exiting!\n",

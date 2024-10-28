@@ -85,6 +85,8 @@ extern PCB	*currentPCB;
 //---------------------------------------------------------
 
 int ProcessFork (VoidFunc func, uint32 param, char *name, int isUser);
+int ProcessRealFork (PCB *);
+void ProcessPrintValidPTE(PCB *);
 void ProcessSchedule ();
 void ContextSwitch(void *, void *, int);
 void ProcessSuspend (PCB *);

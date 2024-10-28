@@ -29,8 +29,10 @@ void Printf(char *format, ...);
 void Exit();
 
 // Related to processes
+int process_fork();  //trap 0x430
 int getpid();                           //trap 0x431
 void process_create(char *exec_name, ...);  //trap 0x432
+void process_print_valid_pte();  //trap 0x433
 
 // Related to shared memory
 unsigned int shmget();			//trap 0x440

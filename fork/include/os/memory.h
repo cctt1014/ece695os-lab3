@@ -21,6 +21,10 @@ int MemoryPageFaultHandler(PCB *pcb);
 //---------------------------------------------------------
 // Put your function prototypes here
 //---------------------------------------------------------
+// return size of a single L2 page table
+int MemoryGetSizeofL2PageTable();
+
+void MemoryIncreaseRefCounter(int);
 
 // Find and return the first available L2 page table base address
 uint32 MemroyAllocL2PageTable(void);
@@ -40,5 +44,8 @@ void MemoryFreeL2Table(uint32 addr);
 
 // Free up physical pages based on ppage number
 void MemoryFreePage(uint32 page);
+
+// ROP access violation handler
+int MemoryROPAccessHandler(PCB * pcb);
 
 #endif	// _memory_h_

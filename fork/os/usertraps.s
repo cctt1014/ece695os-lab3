@@ -74,6 +74,15 @@ _Printf:
 	nop
 .endproc _Printf
 
+.proc _process_fork
+.global _process_fork
+_process_fork:
+	trap 	#0x430
+	jr	r31
+	nop
+.endproc _process_fork
+
+
 .proc _getpid
 .global _getpid
 _getpid:
@@ -89,6 +98,14 @@ _process_create:
 	jr	r31
 	nop
 .endproc _process_create
+
+.proc _process_print_valid_pte
+.global _process_print_valid_pte
+_process_print_valid_pte:
+	trap	#0x433
+	jr	r31
+	nop
+.endproc _process_print_valid_pte
 
 .proc _shmget
 .global _shmget

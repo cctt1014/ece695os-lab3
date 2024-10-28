@@ -49,6 +49,14 @@ int MemoryGetSize() {
   return (*((int *)DLX_MEMSIZE_ADDRESS));
 }
 
+int MemoryGetSizeofL2PageTable() {
+  return sizeof(l2_page_table_list[0]);
+}
+
+void MemoryIncreaseRefCounter(int ppagenum) {
+  ref_counter[ppagenum]++;
+}
+
 
 //----------------------------------------------------------------------
 //
@@ -239,7 +247,43 @@ int MemoryPageFaultHandler(PCB *pcb) {
   return MEM_SUCCESS;
 }
 
+int MemoryROPAccessHandler(PCB * pcb) {
+  uint32 vpagenum, ppagenum;
+  uint32 l1_vpagenum, l2_vpagenum;
+  uint32 *l2_table_base_ptr;
+  uint32 *old_ppage_base_ptr;
+  uint32 *new_ppage_base_ptr;
 
+  vpagenum = pcb->currentSavedFrame[PROCESS_STACK_FAULT] >> MEM_L2FIELD_FIRST_BITNUM;
+  dbprintf('m', "MemoryROPAccessHandler Start!\n");
+
+  l1_vpagenum = vpagenum / MEM_L2TABLE_SIZE;
+  l2_vpagenum = vpagenum % MEM_L2TABLE_SIZE;
+
+  l2_table_base_ptr = (uint32 *) pcb->pagetable[l1_vpagenum];
+  ppagenum = *(l2_table_base_ptr + l2_vpagenum) / MEM_PAGESIZE;
+  // save the old ppage base address
+  old_ppage_base_ptr = (uint32 *) (ppagenum * MEM_PAGESIZE);
+
+  if (ref_counter[ppagenum] > 1) { // at least 2 processes using the ppage
+    *(l2_table_base_ptr + l2_vpagenum) = MemorySetPte(MemoryAllocPage());
+    new_ppage_base_ptr = (uint32 *)(*(l2_table_base_ptr + l2_vpagenum) & MEM_PTE_MASK);
+
+    // copy the shared page to the new location
+    bcopy(old_ppage_base_ptr, new_ppage_base_ptr, MEM_PAGESIZE);
+
+    ref_counter[ppagenum]--;
+  } else if (ref_counter[ppagenum] == 1) { // exact 1 process using the ppage
+    *(l2_table_base_ptr + l2_vpagenum) &= ~(MEM_PTE_READONLY);
+  } else {
+    printf("[ERROR %d] ref_counter error detected in MemoryROPAccessHandler\n", findpid(pcb));
+    printf("[ERROR %d] ref_counter[ppagenum] = %d\n", findpid(pcb), ref_counter[ppagenum]);
+    return;
+  }
+
+  dbprintf('m', "MemoryROPAccessHandler Done!\n");
+
+}
 //---------------------------------------------------------------------
 // You may need to implement the following functions and access them from process.c
 // Feel free to edit/remove them
@@ -273,6 +317,7 @@ uint32 MemoryAllocPage(void) {
       if ((freemap[i] & (uint32)(1 << j)) == 0) {
         freemap[i] |= (1 << j);
         // printf("[DBG] Page allocation return ppage num = %d with i=%d, j=%d", (i << 5) + (j), i,j);
+        ref_counter[i*32+j]++;
         return (i << 5) + (j);
       }
     }
@@ -319,9 +364,21 @@ void MemoryFreeL2Table(uint32 addr) {
 void MemoryFreePage(uint32 page) {
   int i, j;
 
-  i = page >> 5;
-  j = page % 32;
+  ref_counter[page]--;
 
-  freemap[i] &= ~(1 << j);
+  if (ref_counter[page] > 0) {
+    return;
+  } else if (ref_counter[page] == 0) {
+    i = page >> 5;
+    j = page % 32;
+
+    freemap[i] &= ~(1 << j);
+  } else {
+    printf("[ERROR %d] ref_counter error detected in MemoryFreePage\n", findpid(currentPCB));
+    printf("[ERROR %d] ref_counter[ppagenum] = %d\n", findpid(currentPCB), ref_counter[page]);
+    return;
+  }
+
+  
 }
 
