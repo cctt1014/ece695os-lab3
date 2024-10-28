@@ -29,10 +29,6 @@ void MemoryIncreaseRefCounter(int);
 // Find and return the first available L2 page table base address
 uint32 MemroyAllocL2PageTable(void);
 
-// Maps input virtual page index to a physical page 
-// with control bits set accrodingly
-uint32 MemorySetupPte (uint32 page);
-
 // Allocate ppage and set status bits for pte
 uint32 MemorySetPte(uint32 ppagenum);
 

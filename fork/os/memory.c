@@ -273,15 +273,18 @@ int MemoryROPAccessHandler(PCB * pcb) {
     bcopy(old_ppage_base_ptr, new_ppage_base_ptr, MEM_PAGESIZE);
 
     ref_counter[ppagenum]--;
+
+    dbprintf('m', "MemoryROPAccessHandler maps ppage %x to ppage %x\n", old_ppage_base_ptr, new_ppage_base_ptr);
   } else if (ref_counter[ppagenum] == 1) { // exact 1 process using the ppage
-    *(l2_table_base_ptr + l2_vpagenum) &= ~(MEM_PTE_READONLY);
+    *(l2_table_base_ptr + l2_vpagenum) &= invert(MEM_PTE_READONLY);
+    dbprintf('m', "MemoryROPAccessHandler set ppage %x to R/W\n", old_ppage_base_ptr);
   } else {
     printf("[ERROR %d] ref_counter error detected in MemoryROPAccessHandler\n", findpid(pcb));
     printf("[ERROR %d] ref_counter[ppagenum] = %d\n", findpid(pcb), ref_counter[ppagenum]);
     return;
   }
 
-  dbprintf('m', "MemoryROPAccessHandler Done!\n");
+  dbprintf('m', "MemoryROPAccessHandler Done! \n");
 
 }
 //---------------------------------------------------------------------
@@ -329,15 +332,9 @@ uint32 MemoryAllocPage(void) {
 }
 
 
-// Maps input virtual page index to an initial physical page 
-// with control bits masked accrodingly
-uint32 MemorySetupPte (uint32 page) {
-  return 0 & MEM_PTE_MASK;
-}
-
 // Allocate ppage and set status bits for L2 pte
 uint32 MemorySetPte(uint32 ppagenum) {
-  return (ppagenum * MEM_PAGESIZE) | MEM_PTE_VALID;
+  return (ppagenum * MEM_PAGESIZE) | (uint32)MEM_PTE_VALID;
 }
 
 // Free up L2 page table based on its base address

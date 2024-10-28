@@ -79,7 +79,6 @@ _Printf:
 _process_fork:
 	trap 	#0x430
 	jr	r31
-	nop
 .endproc _process_fork
 
 

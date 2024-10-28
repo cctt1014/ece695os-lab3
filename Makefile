@@ -2,7 +2,7 @@
 TEST_IDX=0
 
 
-.PHONY: one two fork
+.PHONY: one two fork run_one run_two run_fork clean
 
 one:
 	cd one-level; make

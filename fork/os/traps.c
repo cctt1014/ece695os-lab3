@@ -360,7 +360,7 @@ dointerrupt (unsigned int cause, unsigned int iar, unsigned int isr,
       break;
     case TRAP_PROCESS_FORK:
       dbprintf ('t', "Got a fork trap!\n");
-      ProcessSetResult(currentPCB, ProcessRealFork(currentPCB));
+      ProcessRealFork(currentPCB);
       break;
     case TRAP_PROCESS_PRINT_VLD_PTE:
       dbprintf ('t', "Got a print process valid PTE trap!\n");
