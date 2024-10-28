@@ -11,40 +11,37 @@ make <target>
 ```
 
 \<target\> should be replaced by the target you would like to build. Here is the list of target available:
-* q2
-* q3
-* q4
-* q5
+* one
+* two
+* fork
 
-For instance, when we would like to build q5:
+For instance, when we would like to build fork:
 ```shell
-make q5
+make fork
 ```
 
 Note that since all targets are sharing the same bin folder. Ensure to clean before build.
 
 
 ## To run the test program:
-### Run with q5 built
+### Run with fork built
 
 Run with default input values:
 ```shell
-make run_q5
+make run_fork
 ```
-Input arguments NUM_N, NUM_O and T (temperature) are available for run_q5. To change these inputs:
+Input arguments TEST_IDX is used to select the test. For instance, if you would like to run fork test in part 5:
 ```shell
-make run_q5 NUM_N=16 NUM_O=32 T=100
+make run_fork TEST_IDX=6
 ```
 
-### Run with any other targets
-Run with default input values:
-```shell
-make run
-```
-Input arguments NUM_PC_PAIR is available for q2/q3/q4. To change the input:
-```shell
-make run NUM_PC_PAIR=5
-```
+TEST_IDX options: 0: Hello World
+                  1: Beyond max virtual address
+                  2: Beyond allocated pages
+                  3: Grow user stack to more than 1 page
+                  4: Create 100 processes sequentially to print Hello World
+                  5: Spawn 30 processes to run in parallel
+                  6: Fork test for part 5 (fork built ONLY)
 
 
 # Potential Issues
@@ -59,3 +56,7 @@ make run NUM_PC_PAIR=5
     Usage: makeprocs.dlx.obj <number of processes to create>
     No runnable processes - exiting!
 ```
+
+# References
+1. https://github.com/sgianelli/DLXOS-Virtual-Memory-Project
+2. http://electro.fisica.unlp.edu.ar/arq/downloads/Software/WinDLX/dlxarch.shtml
