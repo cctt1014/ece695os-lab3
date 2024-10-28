@@ -1,2 +1,0 @@
-work/beyond_max.o: beyond_max.c ../../../include/usertraps.h \
- ../../../include/misc.h

@@ -1,2 +1,0 @@
-work/process_spawn.o: process_spawn.c ../../../include/usertraps.h \
- ../../../include/misc.h
