@@ -21,13 +21,13 @@ int MemoryPageFaultHandler(PCB *pcb);
 //---------------------------------------------------------
 // Put your function prototypes here
 //---------------------------------------------------------
+// return size of a single L2 page table
+int MemoryGetSizeofL2PageTable();
+
+void MemoryIncreaseRefCounter(int);
 
 // Find and return the first available L2 page table base address
 uint32 MemroyAllocL2PageTable(void);
-
-// Maps input virtual page index to a physical page 
-// with control bits set accrodingly
-uint32 MemorySetupPte (uint32 page);
 
 // Allocate ppage and set status bits for pte
 uint32 MemorySetPte(uint32 ppagenum);
@@ -40,5 +40,8 @@ void MemoryFreeL2Table(uint32 addr);
 
 // Free up physical pages based on ppage number
 void MemoryFreePage(uint32 page);
+
+// ROP access violation handler
+int MemoryROPAccessHandler(PCB * pcb);
 
 #endif	// _memory_h_

@@ -5,6 +5,7 @@ default:
 	cd beyond_allocated; make
 	cd grow_stack; make
 	cd process_spawn; make
+	cd fork_test; make
 
 clean:
 	cd makeprocs; make clean
@@ -13,3 +14,4 @@ clean:
 	cd beyond_allocated; make clean
 	cd grow_stack; make clean
 	cd process_spawn; make clean
+	cd fork_test; make clean

@@ -441,6 +441,7 @@ int ProcessFork (VoidFunc func, uint32 param, char *name, int isUser) {
   l2_base_ptr = (uint32 *) pcb->pagetable[MEM_L1TABLE_SIZE-1];
   // Assign an available ppage and set the valid bit
   (* (l2_base_ptr + MEM_L2TABLE_SIZE-1)) = MemorySetPte(MemoryAllocPage());
+  // printf("[DBG] user stack pte init value: %x\n",(* (l2_base_ptr + MEM_L2TABLE_SIZE-1)));
 
   // Assign 4 pages
   // Allocate a l2 page table for the first entry in l1 table
@@ -488,6 +489,10 @@ int ProcessFork (VoidFunc func, uint32 param, char *name, int isUser) {
   // lower 16b: bit position of LSB of L1 page num in vaddress field
   // higher 16b: bit position of LSB of L2 page num in vaddress field
   stackframe[PROCESS_STACK_PTBITS] = (MEM_L2FIELD_FIRST_BITNUM << 16) | (MEM_L1FIELD_FIRST_BITNUM);
+
+
+  // l2_base_ptr = (uint32 *) pcb->pagetable[MEM_L1TABLE_SIZE-1];
+  // printf("[DBG] user stack's pte value after stackframe config: %x\n",(* (l2_base_ptr + MEM_L2TABLE_SIZE-1)));
 
   if (isUser) {
     dbprintf ('p', "About to load %s\n", name);
@@ -628,11 +633,133 @@ int ProcessFork (VoidFunc func, uint32 param, char *name, int isUser) {
     currentPCB = pcb;
   }
 
+  // l2_base_ptr = (uint32 *) pcb->pagetable[MEM_L1TABLE_SIZE-1];
+  // printf("[DBG] user stack's pte value when leaving process fork: %x\n",(* (l2_base_ptr + MEM_L2TABLE_SIZE-1)));
+
+
   dbprintf ('p', "Leaving ProcessFork (%s)\n", name);
   // Return the process number (found by subtracting the PCB number
   // from the base of the PCB array).
   return (pcb - pcbs);
 }
+
+void ProcessRealFork(PCB *parent) {
+  int i, j;
+  PCB *child;                // Holds child pcb while we build it for this process.
+  int intrs;               // Stores previous interrupt settings.
+  int offset;
+  uint32 *child_l2_base_ptr;
+  uint32 *parent_l2_base_ptr;
+  uint32 *child_sys_stack_base;
+  uint32 *parent_sys_stack_base;
+  uint32 * stackframe;
+
+  intrs = DisableIntrs ();
+  dbprintf ('I', "Old interrupt value was 0x%x.\n", intrs);
+  // dbprintf ('p', "Entering ProcessRealFork args=0x%x 0x%x %s\n", (int)func, param, name);
+
+  // Get a free PCB for the new process
+  if (AQueueEmpty(&freepcbs)) {
+    printf ("FATAL error: no free processes!\n");
+    exitsim ();	// NEVER RETURNS!
+  }
+  child = (PCB *)AQueueObject(AQueueFirst (&freepcbs));
+  dbprintf ('p', "Got a link @ 0x%x\n", (int)(child->l));
+  if (AQueueRemove (&(child->l)) != QUEUE_SUCCESS) {
+    printf("FATAL ERROR: could not remove link from freepcbsQueue in ProcessRealFork!\n");
+    exitsim();
+  }
+  // This prevents someone else from grabbing this process
+  ProcessSetStatus (child, PROCESS_STATUS_RUNNABLE);
+
+  // At this point, the PCB is allocated and nobody else can get it.
+  // However, it's not in the run queue, so it won't be run.  Thus, we
+  // can turn on interrupts here.
+  RestoreIntrs (intrs);
+
+  // Copy the process name into the PCB.
+  dstrcpy(child->name, "child");
+
+  //---------------------------------------------------------
+  // IMPORTANT: Copying Parent Stack to Child
+  // 1. Copy parent PCB to child
+  // 2. Set both pcbs' PTE to READ ONLY
+  // 3. Copy system stack accrodingly
+  //---------------------------------------------------------
+  // PCB copy
+  bcopy(parent, child, sizeof(PCB));
+
+  // PTE Copy - Copy every valid L2 page tables
+  for (i = 0; i < MEM_L1TABLE_SIZE; i++) {
+    if (parent->pagetable[i] == 0) {
+      // Skip emtpy parent L1 entries
+      continue;
+    }
+    
+    // Non-empty L1 entry, loop through its L2 page table and set to READ ONLY
+    parent_l2_base_ptr = (uint32 *) parent->pagetable[i];
+    for (j = 0; j < MEM_L2TABLE_SIZE; j++) {
+      if ((*(parent_l2_base_ptr+j) & MEM_PTE_VALID) != 0) {
+        *(parent_l2_base_ptr+j) |= (uint32) MEM_PTE_READONLY;
+        // update reference counter for valid in-use ppage
+        MemoryIncreaseRefCounter((*(parent_l2_base_ptr+j)) / MEM_PAGESIZE);
+      }
+    }
+
+    // Copy parent's L2 PTE to child's L2 PTE
+    child->pagetable[i] = MemroyAllocL2PageTable();
+    child_l2_base_ptr = (uint32 *) child->pagetable[i];
+    bcopy(parent_l2_base_ptr, child_l2_base_ptr, MemoryGetSizeofL2PageTable());
+  }
+  
+  // System stack
+  child->sysStackArea = (MemoryAllocPage()*MEM_PAGESIZE);
+  bcopy(parent->sysStackArea, child->sysStackArea, MEM_PAGESIZE);
+
+  offset = child->sysStackArea - parent->sysStackArea;
+
+  child->sysStackPtr = (int)child->sysStackPtr + offset;
+  child->currentSavedFrame = (int) child->currentSavedFrame + offset;
+  child->currentSavedFrame[PROCESS_STACK_PTBASE] = &child->pagetable[0];
+
+  // Place the PCB onto the run queue.
+  intrs = DisableIntrs ();
+  if ((child->l = AQueueAllocLink(child)) == NULL) {
+    printf("FATAL ERROR: could not get link for forked PCB in ProcessRealFork!\n");
+    exitsim();
+  }
+  if (AQueueInsertLast(&runQueue, child->l) != QUEUE_SUCCESS) {
+    printf("FATAL ERROR: could not insert link into runQueue in ProcessRealFork!\n");
+    exitsim();
+  }
+  RestoreIntrs (intrs);
+
+  // return 0 for child
+  ProcessSetResult(child, 0);
+  // return child pid for parent 
+  ProcessSetResult(parent, child-pcbs);
+}
+
+void ProcessPrintValidPTE(PCB* pcb) {
+  int i, j;
+  uint32 *l2_base_ptr;
+
+  for (i = 0; i < MEM_L1TABLE_SIZE; i++) {
+    if (pcb->pagetable[i] == 0) {
+      // Skip emtpy child L1 entries
+      continue;
+    }
+    l2_base_ptr = (uint32 *) pcb->pagetable[i];
+    for (j = 0; j < MEM_L2TABLE_SIZE; j++) {
+      if (((*(l2_base_ptr+j)) & MEM_PTE_VALID) != 0) {
+        printf("Valid L2 PTE[%d]: %x\n",j, *(l2_base_ptr+j));
+      }
+    }
+  }
+}
+
+
+
 
 //----------------------------------------------------------------------
 //

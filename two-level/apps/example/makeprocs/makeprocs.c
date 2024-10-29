@@ -85,10 +85,10 @@ void main (int argc, char *argv[])
     Printf("makeprocs (%d): Creating process which will spawn 30 processes to run in parallel\n", getpid());
     for (i = 0; i < num_parallel_procs; i++)
       process_create(PROCESS_SPAWN, s_procs_completed_str, NULL);
-  break;
+    break;
 
   default:
-    Printf("[ERROR] Test index is out-of-boundary\n", argv[0]);
+    Printf("makeprocs (%d): ERROR - Test index is out-of-boundary\n", getpid());
     Printf("Index options: 0: Hello World\n");
     Printf("               1: Beyond max virtual address\n");
     Printf("               2: Beyond allocated pages\n");
@@ -106,6 +106,6 @@ void main (int argc, char *argv[])
   
 
   Printf("-------------------------------------------------------------------------------------\n");
-  Printf("makeprocs (%d): All other processes completed, exiting main process.\n", getpid());
+  Printf("makeprocs (%d): All other processes completed successfully, exiting main process.\n", getpid());
 
 }
