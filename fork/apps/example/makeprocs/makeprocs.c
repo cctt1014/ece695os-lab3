@@ -96,7 +96,7 @@ void main (int argc, char *argv[])
     break;
 
   default:
-    Printf("[ERROR] Test index is out-of-boundary\n", argv[0]);
+    Printf("makeprocs (%d): ERROR - Test index is out-of-boundary\n", getpid());
     Printf("Index options: 0: Hello World\n");
     Printf("               1: Beyond max virtual address\n");
     Printf("               2: Beyond allocated pages\n");
@@ -115,6 +115,6 @@ void main (int argc, char *argv[])
   
 
   Printf("-------------------------------------------------------------------------------------\n");
-  Printf("makeprocs (%d): All other processes completed, exiting main process.\n", getpid());
+  Printf("makeprocs (%d): All other processes completed successfully, exiting main process.\n", getpid());
 
 }

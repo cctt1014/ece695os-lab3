@@ -235,7 +235,7 @@ int MemoryPageFaultHandler(PCB *pcb) {
   // segfault if the faulting address is not part of the stack
   if (vpagenum < stackpagenum) {
     dbprintf('m', "fault_address = %x\nsp = %x\n", fault_address, pcb->currentSavedFrame[PROCESS_STACK_USER_STACKPOINTER]);
-    printf("[FATAL] (%d): segmentation fault at page address %x\n", findpid(pcb), fault_address);
+    printf("FATAL ERROR (%d): segmentation fault at page address %x\n", findpid(pcb), fault_address);
     ProcessKill();
     return MEM_FAIL;
   }
@@ -255,7 +255,7 @@ int MemoryROPAccessHandler(PCB * pcb) {
   uint32 *new_ppage_base_ptr;
 
   vpagenum = pcb->currentSavedFrame[PROCESS_STACK_FAULT] >> MEM_L2FIELD_FIRST_BITNUM;
-  dbprintf('m', "MemoryROPAccessHandler Start!\n");
+  dbprintf('m', "MemoryROPAccessHandler (%d): Start!\n", findpid(pcb));
 
   l1_vpagenum = vpagenum / MEM_L2TABLE_SIZE;
   l2_vpagenum = vpagenum % MEM_L2TABLE_SIZE;
@@ -274,17 +274,17 @@ int MemoryROPAccessHandler(PCB * pcb) {
 
     ref_counter[ppagenum]--;
 
-    dbprintf('m', "MemoryROPAccessHandler maps ppage %x to ppage %x\n", old_ppage_base_ptr, new_ppage_base_ptr);
+    dbprintf('m', "MemoryROPAccessHandler (%d): maps ppage %x to ppage %x\n", findpid(pcb), old_ppage_base_ptr, new_ppage_base_ptr);
   } else if (ref_counter[ppagenum] == 1) { // exact 1 process using the ppage
     *(l2_table_base_ptr + l2_vpagenum) &= invert(MEM_PTE_READONLY);
-    dbprintf('m', "MemoryROPAccessHandler set ppage %x to R/W\n", old_ppage_base_ptr);
+    dbprintf('m', "MemoryROPAccessHandler (%d) set ppage %x to R/W\n", findpid(pcb), old_ppage_base_ptr);
   } else {
-    printf("[ERROR %d] ref_counter error detected in MemoryROPAccessHandler\n", findpid(pcb));
-    printf("[ERROR %d] ref_counter[ppagenum] = %d\n", findpid(pcb), ref_counter[ppagenum]);
+    printf("MemoryPageFaultHandler (%d): ERROR - ref_counter error detected in MemoryROPAccessHandler\n", findpid(pcb));
+    printf("MemoryPageFaultHandler (%d): ERROR - ref_counter[ppagenum] = %d\n", findpid(pcb), ref_counter[ppagenum]);
     return;
   }
 
-  dbprintf('m', "MemoryROPAccessHandler Done! \n");
+  dbprintf('m', "MemoryROPAccessHandler (%d): Done! \n", findpid(pcb));
 
 }
 //---------------------------------------------------------------------
@@ -303,7 +303,7 @@ uint32 MemroyAllocL2PageTable(void) {
     }
   }
 
-  printf("[ERROR %d] No more l2 page tables available for use.\n", GetCurrentPid());
+  printf("MemroyAllocL2PageTable (%d): ERROR - No more l2 page tables available for use.\n", GetCurrentPid());
   ProcessKill(currentPCB);
   return -1;
 
@@ -326,7 +326,7 @@ uint32 MemoryAllocPage(void) {
     }
   }
 
-  printf("[ERROR %d] No more free physical page in free map.\n", GetCurrentPid());
+  printf("MemoryAllocPage (%d): ERROR - No more free physical page in free map.\n", GetCurrentPid());
   ProcessKill(currentPCB);
   return -1;
 }
@@ -361,6 +361,8 @@ void MemoryFreeL2Table(uint32 addr) {
 void MemoryFreePage(uint32 page) {
   int i, j;
 
+  // printf("[DBG] Free ppage %x\n",page);
+
   ref_counter[page]--;
 
   if (ref_counter[page] > 0) {
@@ -368,14 +370,15 @@ void MemoryFreePage(uint32 page) {
   } else if (ref_counter[page] == 0) {
     i = page >> 5;
     j = page % 32;
-
-    freemap[i] &= ~(1 << j);
+    
+    freemap[i] &= invert(1 << j);
+    // printf("[DBG] END Free ppage %x\n",page);
   } else {
-    printf("[ERROR %d] ref_counter error detected in MemoryFreePage\n", findpid(currentPCB));
-    printf("[ERROR %d] ref_counter[ppagenum] = %d\n", findpid(currentPCB), ref_counter[page]);
+    printf("MemoryFreePage (%d): ERROR - ref_counter error detected in MemoryFreePage\n", findpid(currentPCB));
+    printf("MemoryFreePage (%d): ERROR - ref_counter[ppagenum] = %d\n", findpid(currentPCB), ref_counter[page]);
     return;
   }
 
-  
+
 }
 

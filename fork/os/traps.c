@@ -538,7 +538,7 @@ dointerrupt (unsigned int cause, unsigned int iar, unsigned int isr,
       MemoryPageFaultHandler(currentPCB);
       break;
     case TRAP_ROP_ACCESS:
-      printf ("Accessing memory page being marked as READONLY");
+      printf ("Got a trap by writing to physical page which is marked as read only in PTE\n");
       MemoryROPAccessHandler(currentPCB);
       break;
     default:

@@ -208,7 +208,7 @@ int MemoryPageFaultHandler(PCB *pcb) {
   // segfault if the faulting address is not part of the stack
   if (vpagenum < stackpagenum) {
     dbprintf('m', "fault_address = %x\nsp = %x\n", fault_address, pcb->currentSavedFrame[PROCESS_STACK_USER_STACKPOINTER]);
-    printf("[FATAL] (%d): segmentation fault at page address %x\n", findpid(pcb), fault_address);
+    printf("FATAL ERROR (%d): segmentation fault at page address %x\n", findpid(pcb), fault_address);
     ProcessKill();
     return MEM_FAIL;
   }
@@ -240,7 +240,7 @@ uint32 MemoryAllocPage(void) {
     }
   }
 
-  printf("[ERROR %d] No more free physical page in free map.\n", GetCurrentPid());
+  printf("MemoryAllocPage (%d): ERROR - No more free physical page in free map.\n", GetCurrentPid());
   ProcessKill(currentPCB);
   return -1;
 }
@@ -264,6 +264,6 @@ void MemoryFreePage(uint32 page) {
   i = page >> 5;
   j = page % 32;
 
-  freemap[i] &= ~(1 << j);
+  freemap[i] &= invert(1 << j);
 }
 

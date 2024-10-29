@@ -27,5 +27,4 @@ void main (int argc, char *argv[])
     Exit();
   }
 
-  Printf("process_spawn (%d): Done!\n", getpid());
 }

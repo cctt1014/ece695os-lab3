@@ -752,7 +752,7 @@ void ProcessPrintValidPTE(PCB* pcb) {
     l2_base_ptr = (uint32 *) pcb->pagetable[i];
     for (j = 0; j < MEM_L2TABLE_SIZE; j++) {
       if (((*(l2_base_ptr+j)) & MEM_PTE_VALID) != 0) {
-        dbprintf('m', "Valid L2 PTE[%d]: %x\n",j, *(l2_base_ptr+j));
+        printf("Valid L2 PTE[%d]: %x\n",j, *(l2_base_ptr+j));
       }
     }
   }
