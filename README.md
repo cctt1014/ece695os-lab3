@@ -20,7 +20,6 @@ For instance, when we would like to build fork:
 make fork
 ```
 
-Note that since all targets are sharing the same bin folder. Ensure to clean before build.
 
 
 ## To run the test program:
@@ -35,13 +34,14 @@ Input arguments TEST_IDX is used to select the test. For instance, if you would 
 make run_fork TEST_IDX=6
 ```
 
-TEST_IDX options: 0: Hello World
-                  1: Beyond max virtual address
-                  2: Beyond allocated pages
-                  3: Grow user stack to more than 1 page
-                  4: Create 100 processes sequentially to print Hello World
-                  5: Spawn 30 processes to run in parallel
-                  6: Fork test for part 5 (fork built ONLY)
+TEST_IDX options: 
+* 0: Hello World
+* 1: Beyond max virtual address
+* 2: Beyond allocated pages
+* 3: Grow user stack to more than 1 page
+* 4: Create 100 processes sequentially to print Hello World
+* 5: Spawn 30 processes to run in parallel
+* 6: Fork test for part 5 (for fork built ONLY)
 
 
 # Potential Issues
